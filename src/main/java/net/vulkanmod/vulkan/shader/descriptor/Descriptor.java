@@ -7,4 +7,6 @@ public interface Descriptor {
      int getType();
 
      int getStages();
+
+     int getSize();
 }
