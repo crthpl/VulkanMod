@@ -104,7 +104,7 @@ public class Uniform {
         final int size;
         int offset;
 
-        Info(String type, String name, int align, int size) {
+        public Info(String type, String name, int align, int size) {
             this.type = type;
             this.name = name;
             this.align = align;

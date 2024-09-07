@@ -118,7 +118,7 @@ public class EffectInstanceM {
             UBO ubo = converter.getUBO();
             this.setUniformSuppliers(ubo);
 
-            Pipeline.Builder builder = new Pipeline.Builder(DefaultVertexFormat.POSITION);
+            GraphicsPipeline.Builder builder = new GraphicsPipeline.Builder(DefaultVertexFormat.POSITION);
             builder.setUniforms(Collections.singletonList(ubo), converter.getSamplerList());
             builder.compileShaders(this.name, converter.getVshConverted(), converter.getFshConverted());
 

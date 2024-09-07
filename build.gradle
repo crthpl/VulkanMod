@@ -35,6 +35,11 @@ dependencies {
 	//MoltenVK
 	include(runtimeOnly("org.lwjgl:lwjgl-vulkan:$lwjglVersion:$macosNatives"))
 	include(runtimeOnly("org.lwjgl:lwjgl-vulkan:$lwjglVersion:$macosArmNatives"))
+
+	testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+
 }
 
 repositories {
@@ -81,7 +86,34 @@ tasks.withType(JavaCompile).configureEach {
 
 loom {
 	accessWidenerPath = file("src/main/resources/vulkanmod.accesswidener")
+
+	runs {
+		test {
+			source = sourceSets.test
+//			defaultMainClass = ComputeTest
+		}
+	}
 }
+//
+//sourceSets {
+//	test {
+//		java {
+//			include "src/test/java"
+//		}
+//	}
+//}
+
+tasks.named('test', Test) {
+	useJUnitPlatform()
+
+	maxHeapSize = '1G'
+
+	testLogging {
+		events "passed"
+	}
+}
+
+
 
 java {
 	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
@@ -95,6 +127,7 @@ jar {
 		rename { "${it}_${project.archivesBaseName}"}
 	}
 }
+
 
 // configure the maven publication
 publishing {
