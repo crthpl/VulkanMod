@@ -33,11 +33,11 @@ public class UBO extends AlignedStruct implements Descriptor {
         return stages;
     }
 
-    public UniformBuffer getUniformBuffer() {
-        return uniformBuffer;
-    }
-
-    public void setUniformBuffer(UniformBuffer uniformBuffer) {
-        this.uniformBuffer = uniformBuffer;
-    }
+//    public UniformBuffer getUniformBuffer() {
+//        return uniformBuffer;
+//    }
+//
+//    public void setUniformBuffer(UniformBuffer uniformBuffer) {
+//        this.uniformBuffer = uniformBuffer;
+//    }
 }

@@ -268,7 +268,7 @@ public class Renderer {
     }
 
     public void endFrame() {
-        if (skipRendering || !recordingCmds)
+    if (skipRendering || !recordingCmds)
             return;
 
         Profiler p = Profiler.getMainProfiler();
@@ -516,7 +516,7 @@ public class Renderer {
         addUsedPipeline(pipeline);
     }
 
-    public void uploadAndBindUBOs(Pipeline pipeline) {
+    public void uploadAndBindUBOs(GraphicsPipeline pipeline) {
         VkCommandBuffer commandBuffer = currentCmdBuffer;
         pipeline.bindDescriptorSets(commandBuffer, currentFrame);
     }

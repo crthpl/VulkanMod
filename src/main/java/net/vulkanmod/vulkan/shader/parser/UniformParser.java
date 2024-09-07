@@ -1,6 +1,7 @@
 package net.vulkanmod.vulkan.shader.parser;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.vulkanmod.vulkan.shader.GraphicsPipeline;
 import net.vulkanmod.vulkan.shader.Pipeline;
 import net.vulkanmod.vulkan.shader.descriptor.ImageDescriptor;
 import net.vulkanmod.vulkan.shader.layout.AlignedStruct;
@@ -105,7 +106,7 @@ public class UniformParser {
         }
 
         //hardcoded 0 binding as it should always be 0 in this case
-        return builder.buildUBO(0, Pipeline.Builder.getStageFromString("all"));
+        return builder.buildUBO(0, GraphicsPipeline.Builder.getStageFromString("all"));
     }
 
     private List<ImageDescriptor> createSamplerList() {

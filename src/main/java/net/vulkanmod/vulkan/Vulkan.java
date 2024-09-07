@@ -1,5 +1,7 @@
 package net.vulkanmod.vulkan;
 
+import net.vulkanmod.Initializer;
+import net.vulkanmod.config.Config;
 import net.vulkanmod.vulkan.device.Device;
 import net.vulkanmod.vulkan.device.DeviceManager;
 import net.vulkanmod.vulkan.framebuffer.SwapChain;
@@ -17,8 +19,12 @@ import org.lwjgl.util.vma.VmaAllocatorCreateInfo;
 import org.lwjgl.util.vma.VmaVulkanFunctions;
 import org.lwjgl.vulkan.*;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static java.util.stream.Collectors.toSet;
@@ -26,7 +32,6 @@ import static net.vulkanmod.vulkan.queue.Queue.getQueueFamilies;
 import static net.vulkanmod.vulkan.util.VUtil.asPointerBuffer;
 import static org.lwjgl.glfw.GLFWVulkan.glfwCreateWindowSurface;
 import static org.lwjgl.glfw.GLFWVulkan.glfwGetRequiredInstanceExtensions;
-import static org.lwjgl.system.MemoryStack.stackGet;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 import static org.lwjgl.util.vma.Vma.vmaCreateAllocator;
@@ -59,9 +64,9 @@ public class Vulkan {
         }
     }
 
-    public static final Set<String> REQUIRED_EXTENSION = getRequiredExtensionSet();
+    public static final Set<String> REQUIRED_GRAPHICS_EXTENSIONS = getRequiredGraphicsExtensionSet();
 
-    private static Set<String> getRequiredExtensionSet() {
+    private static Set<String> getRequiredGraphicsExtensionSet() {
         ArrayList<String> extensions = new ArrayList<>(List.of(VK_KHR_SWAPCHAIN_EXTENSION_NAME));
 
         if (DYNAMIC_RENDERING) {
@@ -138,7 +143,10 @@ public class Vulkan {
     public static boolean use24BitsDepthFormat = true;
     private static int DEFAULT_DEPTH_FORMAT = 0;
 
+    public static boolean headless = true;
+
     public static void initVulkan(long window) {
+        headless = false;
         createInstance();
         setupDebugMessenger();
         createSurface(window);
@@ -154,6 +162,26 @@ public class Vulkan {
         setupDepthFormat();
         createSwapChain();
         Renderer.initRenderer();
+
+    }
+
+    public static void initHeadless() {
+        headless = true;
+        Initializer.CONFIG = new Config();
+        createInstance();
+        setupDebugMessenger();
+
+        DeviceManager.init(instance);
+
+        createVma();
+        MemoryTypes.createMemoryTypes();
+
+        createCommandPool();
+        allocateImmediateCmdBuffer();
+
+//        setupDepthFormat();
+//        createSwapChain();
+//        Renderer.initRenderer();
 
     }
 
@@ -349,7 +377,7 @@ public class Vulkan {
 
             VkCommandPoolCreateInfo poolInfo = VkCommandPoolCreateInfo.calloc(stack);
             poolInfo.sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);
-            poolInfo.queueFamilyIndex(queueFamilyIndices.graphicsFamily);
+            poolInfo.queueFamilyIndex(Vulkan.getHeadless() ? queueFamilyIndices.computeFamily : queueFamilyIndices.graphicsFamily);
             poolInfo.flags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
             LongBuffer pCommandPool = stack.mallocLong(1);
@@ -415,22 +443,23 @@ public class Vulkan {
 
     private static PointerBuffer getRequiredInstanceExtensions() {
 
-        PointerBuffer glfwExtensions = glfwGetRequiredInstanceExtensions();
 
+        Set<String> otherExtensions = Set.of();
         if (ENABLE_VALIDATION_LAYERS) {
-
-            MemoryStack stack = stackGet();
-
-            PointerBuffer extensions = stack.mallocPointer(glfwExtensions.capacity() + 1);
-
-            extensions.put(glfwExtensions);
-            extensions.put(stack.UTF8(VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
-
-            // Rewind the buffer before returning it to reset its position back to 0
-            return extensions.rewind();
+            otherExtensions.add(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
 
-        return glfwExtensions;
+        PointerBuffer glfwExtensions = PointerBuffer.allocateDirect(0);
+        if (!Vulkan.getHeadless()) {
+            glfwExtensions = glfwGetRequiredInstanceExtensions();
+        }
+
+        PointerBuffer extensions = PointerBuffer.allocateDirect(glfwExtensions.capacity() + otherExtensions.size());
+        extensions.put(glfwExtensions);
+        extensions.put(asPointerBuffer(otherExtensions));
+
+        // Rewind the buffer before returning it to reset its position back to 0
+        return extensions.rewind();
     }
 
     public static void checkResult(int result, String errorMessage) {
@@ -469,5 +498,7 @@ public class Vulkan {
     public static Device getDevice() {
         return DeviceManager.device;
     }
+
+    public static boolean getHeadless() { return headless; }
 }
 

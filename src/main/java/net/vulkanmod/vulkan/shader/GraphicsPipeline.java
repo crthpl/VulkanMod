@@ -1,21 +1,40 @@
 package net.vulkanmod.vulkan.shader;
 
 import com.google.common.collect.ImmutableList;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
+import net.minecraft.util.GsonHelper;
 import net.vulkanmod.interfaces.VertexFormatMixed;
 import net.vulkanmod.vulkan.Renderer;
 import net.vulkanmod.vulkan.Vulkan;
 import net.vulkanmod.vulkan.device.DeviceManager;
+import net.vulkanmod.vulkan.framebuffer.RenderPass;
+import net.vulkanmod.vulkan.shader.descriptor.ImageDescriptor;
+import net.vulkanmod.vulkan.shader.descriptor.ManualUBO;
+import net.vulkanmod.vulkan.shader.descriptor.UBO;
+import net.vulkanmod.vulkan.shader.layout.AlignedStruct;
+import net.vulkanmod.vulkan.shader.layout.PushConstants;
+import net.vulkanmod.vulkan.texture.VTextureSelector;
+import org.apache.commons.lang3.Validate;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import static net.vulkanmod.vulkan.shader.SPIRVUtils.compileShader;
+import static net.vulkanmod.vulkan.shader.SPIRVUtils.compileShaderAbsoluteFile;
 import static org.lwjgl.system.MemoryStack.stackGet;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.vulkan.VK10.*;
@@ -31,7 +50,7 @@ public class GraphicsPipeline extends Pipeline {
 
     GraphicsPipeline(Builder builder) {
         super(builder.shaderPath);
-        this.buffers = builder.UBOs;
+        this.descriptors = new ArrayList<>(builder.UBOs);
         this.manualUBO = builder.manualUBO;
         this.imageDescriptors = builder.imageDescriptors;
         this.pushConstants = builder.pushConstants;
@@ -341,5 +360,60 @@ public class GraphicsPipeline extends Pipeline {
 
         PIPELINES.remove(this);
         Renderer.getInstance().removeUsedPipeline(this);
+    }
+
+    public static class Builder extends Pipeline.Builder {
+
+        public static GraphicsPipeline createGraphicsPipeline(VertexFormat format, String path) {
+            GraphicsPipeline.Builder pipelineBuilder = new GraphicsPipeline.Builder(format, path);
+            pipelineBuilder.parseBindingsJSON();
+            pipelineBuilder.compileShaders();
+            return pipelineBuilder.createGraphicsPipeline();
+        }
+
+        final VertexFormat vertexFormat;
+
+        SPIRVUtils.SPIRV vertShaderSPIRV;
+        SPIRVUtils.SPIRV fragShaderSPIRV;
+
+        RenderPass renderPass;
+
+        public Builder(VertexFormat vertexFormat, String path) {
+            super(path);
+            this.vertexFormat = vertexFormat;
+            this.shaderPath = path;
+        }
+
+        public Builder(VertexFormat vertexFormat) {
+            this(vertexFormat, null);
+        }
+
+        public GraphicsPipeline createGraphicsPipeline() {
+            Validate.isTrue(this.imageDescriptors != null && this.UBOs != null
+                            && this.vertShaderSPIRV != null && this.fragShaderSPIRV != null,
+                    "Cannot create Pipeline: resources missing");
+
+            if (this.manualUBO != null)
+                this.UBOs.add(this.manualUBO);
+
+            return new GraphicsPipeline(this);
+        }
+
+        public void setSPIRVs(SPIRVUtils.SPIRV vertShaderSPIRV, SPIRVUtils.SPIRV fragShaderSPIRV) {
+            this.vertShaderSPIRV = vertShaderSPIRV;
+            this.fragShaderSPIRV = fragShaderSPIRV;
+        }
+
+        public void compileShaders() {
+            String resourcePath = SPIRVUtils.class.getResource("/assets/vulkanmod/shaders/").toExternalForm();
+
+            this.vertShaderSPIRV = compileShaderAbsoluteFile(String.format("%s%s.vsh", resourcePath, this.shaderPath), SPIRVUtils.ShaderKind.VERTEX_SHADER);
+            this.fragShaderSPIRV = compileShaderAbsoluteFile(String.format("%s%s.fsh", resourcePath, this.shaderPath), SPIRVUtils.ShaderKind.FRAGMENT_SHADER);
+        }
+
+        public void compileShaders(String name, String vsh, String fsh) {
+            this.vertShaderSPIRV = compileShader(String.format("%s.vsh", name), vsh, SPIRVUtils.ShaderKind.VERTEX_SHADER);
+            this.fragShaderSPIRV = compileShader(String.format("%s.fsh", name), fsh, SPIRVUtils.ShaderKind.FRAGMENT_SHADER);
+        }
     }
 }
