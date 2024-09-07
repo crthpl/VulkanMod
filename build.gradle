@@ -12,6 +12,13 @@ base {
 
 loom {
 	accessWidenerPath = file("src/main/resources/vulkanmod.accesswidener")
+
+	runs {
+		test {
+			source = sourceSets.test
+//			defaultMainClass = ComputeTest
+		}
+	}
 }
 
 dependencies {
@@ -34,6 +41,10 @@ dependencies {
 	includeModule("fabric-resource-loader-v0")
 	includeModule("fabric-rendering-fluids-v1")
 	includeModule("fabric-rendering-v1")
+
+	testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
 }
 
 project.ext.lwjglVersion = "3.3.3"
@@ -73,6 +84,26 @@ processResources {
 tasks.withType(JavaCompile).configureEach {
 	it.options.release = 21
 }
+//
+//sourceSets {
+//	test {
+//		java {
+//			include "src/test/java"
+//		}
+//	}
+//}
+
+tasks.named('test', Test) {
+	useJUnitPlatform()
+
+	maxHeapSize = '1G'
+
+	testLogging {
+		events "passed"
+	}
+}
+
+
 
 java {
 	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
@@ -89,6 +120,7 @@ jar {
 		rename { "${it}_${project.base.archivesName.get()}"}
 	}
 }
+
 
 // configure the maven publication
 publishing {

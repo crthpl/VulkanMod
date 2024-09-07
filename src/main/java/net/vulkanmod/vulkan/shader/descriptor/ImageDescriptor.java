@@ -5,7 +5,7 @@ import net.vulkanmod.vulkan.texture.VulkanImage;
 
 import static org.lwjgl.vulkan.VK10.*;
 
-public class ImageDescriptor implements Descriptor {
+public class ImageDescriptor {
 
     private final int descriptorType;
     private final int binding;
@@ -35,17 +35,17 @@ public class ImageDescriptor implements Descriptor {
         setLayout(isStorageImage ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
 
-    @Override
+//    @Override
     public int getBinding() {
         return binding;
     }
 
-    @Override
+//    @Override
     public int getType() {
         return descriptorType;
     }
 
-    @Override
+//    @Override
     public int getStages() {
         return VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT;
     }

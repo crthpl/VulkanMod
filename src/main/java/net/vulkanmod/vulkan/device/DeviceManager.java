@@ -11,7 +11,9 @@ import org.lwjgl.vulkan.*;
 
 import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static java.util.stream.Collectors.toSet;
 import static net.vulkanmod.vulkan.queue.Queue.findQueueFamilies;
@@ -116,7 +118,9 @@ public abstract class DeviceManager {
             memoryProperties = VkPhysicalDeviceMemoryProperties.malloc();
             vkGetPhysicalDeviceMemoryProperties(physicalDevice, memoryProperties);
 
-            surfaceProperties = querySurfaceProperties(physicalDevice, stack);
+            if (!Vulkan.getHeadless()) {
+                surfaceProperties = querySurfaceProperties(physicalDevice, stack);
+            }
         }
     }
 
@@ -211,7 +215,10 @@ public abstract class DeviceManager {
 //                deviceVulkan13Features.pNext(deviceVulkan11Features.address());
             }
 
-            createInfo.ppEnabledExtensionNames(asPointerBuffer(Vulkan.REQUIRED_EXTENSION));
+            if (!Vulkan.getHeadless()) {
+                createInfo.ppEnabledExtensionNames(asPointerBuffer(Vulkan.REQUIRED_GRAPHICS_EXTENSIONS));
+            }
+            // no extensions required otherwise atm
 
 //            Configuration.DEBUG_FUNCTIONS.set(true);
 
@@ -224,9 +231,12 @@ public abstract class DeviceManager {
 
             vkDevice = new VkDevice(pDevice.get(0), physicalDevice, createInfo, VK_API_VERSION_1_2);
 
-            graphicsQueue = new GraphicsQueue(stack, indices.graphicsFamily);
+            if (!Vulkan.getHeadless()) {
+                graphicsQueue = new GraphicsQueue(stack, indices.graphicsFamily);
+                presentQueue = new PresentQueue(stack, indices.presentFamily);
+            }
+
             transferQueue = new TransferQueue(stack, indices.transferFamily);
-            presentQueue = new PresentQueue(stack, indices.presentFamily);
             computeQueue = new ComputeQueue(stack, indices.computeFamily);
         }
     }
@@ -255,10 +265,18 @@ public abstract class DeviceManager {
             Queue.QueueFamilyIndices indices = findQueueFamilies(device);
 
             VkExtensionProperties.Buffer availableExtensions = getAvailableExtension(stack, device);
+
+            if (Vulkan.getHeadless()) {
+                return indices.isSuitable();
+            }
+
+            // GRAPHICS REQUIREMENTS
             boolean extensionsSupported = availableExtensions.stream()
                     .map(VkExtensionProperties::extensionNameString)
                     .collect(toSet())
-                    .containsAll(Vulkan.REQUIRED_EXTENSION);
+                    .containsAll(Vulkan.REQUIRED_GRAPHICS_EXTENSIONS);
+
+            // swap chain stuff doesn't matter for headless
 
             boolean swapChainAdequate = false;
 
@@ -333,7 +351,8 @@ public abstract class DeviceManager {
         for (Device device : availableDevices) {
             stringBuilder.append("Device: %s\n".formatted(device.deviceName));
 
-            var unsupported = device.getUnsupportedExtensions(Vulkan.REQUIRED_EXTENSION);
+            // headless doesn't require any extensions (yet?)
+            var unsupported = Vulkan.getHeadless() ? Collections.emptySet() : device.getUnsupportedExtensions(Vulkan.REQUIRED_GRAPHICS_EXTENSIONS);
             if (unsupported.isEmpty()) {
                 stringBuilder.append("All required extensions are supported\n");
             } else {

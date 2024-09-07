@@ -135,6 +135,7 @@ public class Device {
                     .map(VkExtensionProperties::extensionNameString)
                     .collect(toSet());
 
+
             Set<String> unsupportedExtensions = new HashSet<>(requiredExtensions);
             unsupportedExtensions.removeAll(extensions);
 

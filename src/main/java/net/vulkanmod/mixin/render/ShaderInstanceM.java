@@ -77,7 +77,7 @@ public class ShaderInstanceM implements ShaderMixed {
             }
 
             String path = String.format("minecraft/core/%s/%s", name, name);
-            Pipeline.Builder pipelineBuilder = new Pipeline.Builder(format, path);
+            GraphicsPipeline.Builder pipelineBuilder = new GraphicsPipeline.Builder(format, path);
             pipelineBuilder.parseBindingsJSON();
             pipelineBuilder.compileShaders();
             this.pipeline = pipelineBuilder.createGraphicsPipeline();
@@ -225,7 +225,7 @@ public class ShaderInstanceM implements ShaderMixed {
             String fshSrc = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
 
             GlslConverter converter = new GlslConverter();
-            Pipeline.Builder builder = new Pipeline.Builder(format, this.name);
+            GraphicsPipeline.Builder builder = new GraphicsPipeline.Builder(format, this.name);
 
             converter.process(vshSrc, fshSrc);
             UBO ubo = converter.getUBO();

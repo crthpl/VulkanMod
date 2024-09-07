@@ -94,7 +94,7 @@ public abstract class Queue {
             for (int i = 0; i < queueFamilies.capacity(); i++) {
                 int queueFlags = queueFamilies.get(i).queueFlags();
 
-                if ((queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0) {
+                if ((queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0 && !Vulkan.getHeadless()) {
                     indices.graphicsFamily = i;
 
                     vkGetPhysicalDeviceSurfaceSupportKHR(device, i, Vulkan.getSurface(), presentSupport);
@@ -110,7 +110,7 @@ public abstract class Queue {
                     indices.transferFamily = i;
                 }
 
-                if (indices.presentFamily == -1) {
+                if (indices.presentFamily == -1 && !Vulkan.getHeadless()) {
                     vkGetPhysicalDeviceSurfaceSupportKHR(device, i, Vulkan.getSurface(), presentSupport);
 
                     if (presentSupport.get(0) == VK_TRUE) {
@@ -122,7 +122,7 @@ public abstract class Queue {
                     break;
             }
 
-            if (indices.presentFamily == -1) {
+            if (indices.presentFamily == -1 && !Vulkan.getHeadless()) {
                 // Some drivers will not show present support even if some queue supports it
                 // Use compute queue as fallback
 
@@ -167,9 +167,9 @@ public abstract class Queue {
                 }
             }
 
-            if (indices.graphicsFamily == VK_QUEUE_FAMILY_IGNORED)
+            if (indices.graphicsFamily == VK_QUEUE_FAMILY_IGNORED && !Vulkan.getHeadless())
                 throw new RuntimeException("Unable to find queue family with graphics support.");
-            if (indices.presentFamily == VK_QUEUE_FAMILY_IGNORED)
+            if (indices.presentFamily == VK_QUEUE_FAMILY_IGNORED && !Vulkan.getHeadless())
                 throw new RuntimeException("Unable to find queue family with present support.");
             if (indices.computeFamily == VK_QUEUE_FAMILY_IGNORED)
                 throw new RuntimeException("Unable to find queue family with compute support.");
@@ -188,12 +188,19 @@ public abstract class Queue {
             return graphicsFamily != -1 && presentFamily != -1 && transferFamily != -1 && computeFamily != -1;
         }
 
+        // if headless, graphics/present not needed
         public boolean isSuitable() {
-            return graphicsFamily != -1 && presentFamily != -1;
+            return Vulkan.getHeadless() || (graphicsFamily != -1 && presentFamily != -1);
         }
 
         public int[] unique() {
-            return IntStream.of(graphicsFamily, presentFamily, transferFamily, computeFamily).distinct().toArray();
+            IntStream stream;
+            if (Vulkan.getHeadless()) {
+                stream = IntStream.of(transferFamily, computeFamily);
+            } else {
+                stream = IntStream.of(graphicsFamily, presentFamily, transferFamily, computeFamily);
+            }
+            return stream.distinct().toArray();
         }
 
         public int[] array() {
