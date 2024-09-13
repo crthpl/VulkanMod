@@ -2,15 +2,15 @@ package net.vulkanmod.vulkan.shader.descriptor;
 
 import org.lwjgl.system.MemoryUtil;
 
-public class ManualUBO extends UBO {
+public class ManualBufferDescriptor extends BufferDescriptor {
 
     private long srcPtr;
     private int srcSize;
 
     private boolean update = true;
 
-    public ManualUBO(int binding, int type, int size) {
-        super(binding, type, size * 4, null);
+    public ManualBufferDescriptor(int binding, int stages, int size, int type) {
+        super(binding, stages, size * 4, null, type);
     }
 
     @Override

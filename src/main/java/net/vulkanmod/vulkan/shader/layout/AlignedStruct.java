@@ -1,9 +1,11 @@
 package net.vulkanmod.vulkan.shader.layout;
 
-import net.vulkanmod.vulkan.shader.descriptor.UBO;
+import net.vulkanmod.vulkan.shader.descriptor.BufferDescriptor;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.lwjgl.vulkan.VK10.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 
 public abstract class AlignedStruct {
 
@@ -58,9 +60,14 @@ public abstract class AlignedStruct {
             this.uniformsInfo.add(info);
         }
 
-        public UBO buildUBO(int binding, int stages) {
+        public BufferDescriptor buildUBO(int binding, int stages) {
             //offset is expressed in floats/ints
-            return new UBO(binding, stages, this.currentOffset * 4, this.uniformsInfo);
+            return buildDescriptor(binding, stages, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
+        }
+
+        public BufferDescriptor buildDescriptor(int binding, int stages, int type) {
+            //offset is expressed in floats/ints
+            return new BufferDescriptor(binding, stages, this.currentOffset * 4, this.uniformsInfo, type);
         }
 
         public PushConstants buildPushConstant() {

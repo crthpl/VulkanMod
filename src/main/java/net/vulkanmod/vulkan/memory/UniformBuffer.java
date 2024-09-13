@@ -18,22 +18,13 @@ public class UniformBuffer extends Buffer {
         this.createBuffer(size);
     }
 
-    public void checkCapacity(int size) {
-        if (size > this.bufferSize - this.usedBytes) {
-            resizeBuffer((this.bufferSize + size) * 2);
-        }
-    }
 
-    public void updateOffset(int alignedSize) {
-        usedBytes += alignedSize;
-    }
 
-    private void resizeBuffer(int newSize) {
-        MemoryManager.getInstance().addToFreeable(this);
-        createBuffer(newSize);
-    }
 
-    public long getPointer() {
-        return this.data.get(0) + usedBytes;
-    }
+
+//    private void resizeBuffer(int newSize) {
+//        MemoryManager.getInstance().addToFreeable(this);
+//        createBuffer(newSize);
+//    }
+
 }

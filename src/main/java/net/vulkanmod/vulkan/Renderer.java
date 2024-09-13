@@ -14,6 +14,7 @@ import net.vulkanmod.vulkan.device.DeviceManager;
 import net.vulkanmod.vulkan.framebuffer.Framebuffer;
 import net.vulkanmod.vulkan.framebuffer.RenderPass;
 import net.vulkanmod.vulkan.memory.MemoryManager;
+import net.vulkanmod.vulkan.memory.UniformBuffer;
 import net.vulkanmod.vulkan.pass.DefaultMainPass;
 import net.vulkanmod.vulkan.pass.MainPass;
 import net.vulkanmod.vulkan.shader.GraphicsPipeline;
@@ -444,7 +445,7 @@ public class Renderer {
             createStagingBuffers();
             allocateCommandBuffers();
 
-            Pipeline.recreateDescriptorSets(framesNum);
+            GraphicsPipeline.recreateDescriptorSets(framesNum);
 
             drawer.createResources(framesNum);
         }
@@ -516,6 +517,8 @@ public class Renderer {
 
     public void uploadAndBindUBOs(GraphicsPipeline pipeline) {
         VkCommandBuffer commandBuffer = currentCmdBuffer;
+        UniformBuffer uniformBuffer = Renderer.getDrawer().getUniformBuffer();
+        pipeline.updateUniformBuffer(uniformBuffer, currentFrame);
         pipeline.bindDescriptorSets(commandBuffer, currentFrame);
     }
 
