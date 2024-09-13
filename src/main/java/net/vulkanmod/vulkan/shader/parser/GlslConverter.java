@@ -1,7 +1,7 @@
 package net.vulkanmod.vulkan.shader.parser;
 
+import net.vulkanmod.vulkan.shader.descriptor.BufferDescriptor;
 import net.vulkanmod.vulkan.shader.descriptor.ImageDescriptor;
-import net.vulkanmod.vulkan.shader.descriptor.UBO;
 
 import java.util.*;
 
@@ -135,7 +135,7 @@ public class GlslConverter {
         this.inOutParser.setShaderStage(this.shaderStage);
     }
 
-    public UBO getUBO() {
+    public BufferDescriptor getUBO() {
         return this.uniformParser.getUbo();
     }
 

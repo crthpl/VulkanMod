@@ -13,7 +13,7 @@ import net.vulkanmod.Initializer;
 import net.vulkanmod.interfaces.ShaderMixed;
 import net.vulkanmod.vulkan.shader.GraphicsPipeline;
 import net.vulkanmod.vulkan.shader.Pipeline;
-import net.vulkanmod.vulkan.shader.descriptor.UBO;
+import net.vulkanmod.vulkan.shader.descriptor.BufferDescriptor;
 import net.vulkanmod.vulkan.shader.layout.Uniform;
 import net.vulkanmod.vulkan.shader.parser.GlslConverter;
 import net.vulkanmod.vulkan.util.MappedBuffer;
@@ -77,7 +77,8 @@ public class ShaderInstanceM implements ShaderMixed {
             }
 
             String path = String.format("minecraft/core/%s/%s", name, name);
-            GraphicsPipeline.Builder pipelineBuilder = new GraphicsPipeline.Builder(format, path);
+            GraphicsPipeline.Builder pipelineBuilder = new GraphicsPipeline.Builder(format);
+            pipelineBuilder.setShaderPath(path);
             pipelineBuilder.parseBindingsJSON();
             pipelineBuilder.compileShaders();
             this.pipeline = pipelineBuilder.createGraphicsPipeline();
@@ -182,7 +183,7 @@ public class ShaderInstanceM implements ShaderMixed {
     @Overwrite
     public void clear() {}
 
-    private void setUniformSuppliers(UBO ubo) {
+    private void setUniformSuppliers(BufferDescriptor ubo) {
 
         for (Uniform vUniform : ubo.getUniforms()) {
             com.mojang.blaze3d.shaders.Uniform uniform = this.uniformMap.get(vUniform.getName());
@@ -225,13 +226,15 @@ public class ShaderInstanceM implements ShaderMixed {
             String fshSrc = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
 
             GlslConverter converter = new GlslConverter();
-            GraphicsPipeline.Builder builder = new GraphicsPipeline.Builder(format, this.name);
+            GraphicsPipeline.Builder builder = new GraphicsPipeline.Builder(format);
+            builder.setShaderPath(this.name);
 
             converter.process(vshSrc, fshSrc);
-            UBO ubo = converter.getUBO();
+            BufferDescriptor ubo = converter.getUBO();
             this.setUniformSuppliers(ubo);
 
-            builder.setUniforms(Collections.singletonList(ubo), converter.getSamplerList());
+            builder.addDescriptor(ubo);
+            builder.setImageDescriptors(converter.getSamplerList());
             builder.compileShaders(this.name, converter.getVshConverted(), converter.getFshConverted());
 
             this.pipeline = builder.createGraphicsPipeline();

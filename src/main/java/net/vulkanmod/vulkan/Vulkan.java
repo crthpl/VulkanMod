@@ -44,8 +44,8 @@ import static org.lwjgl.vulkan.VK12.VK_API_VERSION_1_2;
 
 public class Vulkan {
 
-    public static final boolean ENABLE_VALIDATION_LAYERS = false;
-//    public static final boolean ENABLE_VALIDATION_LAYERS = true;
+//    public static final boolean ENABLE_VALIDATION_LAYERS = false;
+    public static final boolean ENABLE_VALIDATION_LAYERS = true;
 
     //    public static final boolean DYNAMIC_RENDERING = true;
     public static final boolean DYNAMIC_RENDERING = false;
@@ -444,7 +444,7 @@ public class Vulkan {
     private static PointerBuffer getRequiredInstanceExtensions() {
 
 
-        Set<String> otherExtensions = Set.of();
+        Set<String> otherExtensions = new HashSet<>();
         if (ENABLE_VALIDATION_LAYERS) {
             otherExtensions.add(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }

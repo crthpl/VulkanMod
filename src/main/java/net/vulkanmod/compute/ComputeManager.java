@@ -5,9 +5,12 @@ import net.vulkanmod.render.chunk.buffer.UploadManager;
 import net.vulkanmod.vulkan.Drawer;
 import net.vulkanmod.vulkan.Renderer;
 import net.vulkanmod.vulkan.Vulkan;
+import net.vulkanmod.vulkan.device.DeviceManager;
 import net.vulkanmod.vulkan.memory.MemoryManager;
 import net.vulkanmod.vulkan.memory.MemoryTypes;
 import net.vulkanmod.vulkan.memory.UniformBuffer;
+import net.vulkanmod.vulkan.queue.CommandPool;
+import net.vulkanmod.vulkan.queue.ComputeQueue;
 import net.vulkanmod.vulkan.shader.*;
 import net.vulkanmod.vulkan.util.VUtil;
 import org.lwjgl.PointerBuffer;
@@ -24,8 +27,8 @@ import static org.lwjgl.vulkan.VK10.*;
 
 public class ComputeManager {
     private static VkDevice device;
-    private List<VkCommandBuffer> commandBuffers;
-    private UploadManager uploader;
+    private CommandPool commandPool;
+//    private UploadManager uploader;
 
     private ComputePipeline pipeline;
 
@@ -46,6 +49,8 @@ public class ComputeManager {
     private ArrayList<Long> renderFinishedFences;
     private ArrayList<Long> inFlightFences;
 
+    private ComputeQueue queue;
+
     public ComputeManager(int parallelism) {
         this.framesNum = parallelism;
         device = Vulkan.getVkDevice();
@@ -54,10 +59,10 @@ public class ComputeManager {
         // only do once??
 //        Vulkan.createStagingBuffers();
 
-        this.uploader = new UploadManager();
+//        this.uploader = new UploadManager();
 
-
-        allocateCommandBuffers();
+        queue = DeviceManager.getComputeQueue();
+//        allocateCommandBuffers();
         createSyncObjects();
     }
 
@@ -66,61 +71,63 @@ public class ComputeManager {
     }
 
     private void allocateCommandBuffers() {
-        if (commandBuffers != null) {
-            commandBuffers.forEach(commandBuffer -> vkFreeCommandBuffers(device, Vulkan.getCommandPool(), commandBuffer));
-        }
 
-        commandBuffers = new ArrayList<>(framesNum);
-
-        try (MemoryStack stack = stackPush()) {
-
-            VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
-            allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
-            allocInfo.commandPool(getCommandPool());
-            allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-            allocInfo.commandBufferCount(framesNum);
-
-            PointerBuffer pCommandBuffers = stack.mallocPointer(framesNum);
-
-            if (vkAllocateCommandBuffers(device, allocInfo, pCommandBuffers) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to allocate command buffers");
-            }
-
-            for (int i = 0; i < framesNum; i++) {
-                commandBuffers.add(new VkCommandBuffer(pCommandBuffers.get(i), device));
-            }
-        }
+//        commandPool
+//        if (commandBuffers != null) {
+//            commandBuffers.forEach(commandBuffer -> vkFreeCommandBuffers(device, Vulkan.getCommandPool(), commandBuffer));
+//        }
+//
+//        commandBuffers = new ArrayList<>(parallelism);
+//
+//        try (MemoryStack stack = stackPush()) {
+//
+//            VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
+//            allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
+//            allocInfo.commandPool(getCommandPool());
+//            allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+//            allocInfo.commandBufferCount(parallelism);
+//
+//            PointerBuffer pCommandBuffers = stack.mallocPointer(parallelism);
+//
+//            if (vkAllocateCommandBuffers(device, allocInfo, pCommandBuffers) != VK_SUCCESS) {
+//                throw new RuntimeException("Failed to allocate command buffers");
+//            }
+//
+//            for (int i = 0; i < parallelism; i++) {
+//                commandBuffers.add(new VkCommandBuffer(pCommandBuffers.get(i), device));
+//            }
+//        }
     }
 
     private void createSyncObjects() {
-        renderFinishedFences = new ArrayList<>(framesNum);
-        inFlightFences = new ArrayList<>(framesNum);
-
-        try (MemoryStack stack = stackPush()) {
+//        renderFinishedFences = new ArrayList<>(parallelism);
+//        inFlightFences = new ArrayList<>(parallelism);
 //
-//            VkSemaphoreCreateInfo semaphoreInfo = VkSemaphoreCreateInfo.calloc(stack);
-//            semaphoreInfo.sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO);
-
-            VkFenceCreateInfo fenceInfo = VkFenceCreateInfo.calloc(stack);
-            fenceInfo.sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO);
-            fenceInfo.flags(VK_FENCE_CREATE_SIGNALED_BIT);
-
-            LongBuffer pFence = stack.mallocLong(1);
-
-            for (int i = 0; i < framesNum; i++) {
-//                vkCreateSemaphore(device, semaphoreInfo, null, pImageAvailableSemaphore) != VK_SUCCESS
-                if (vkCreateFence(device, fenceInfo, null, pFence) != VK_SUCCESS) {
-                    throw new RuntimeException("Failed to create synchronization objects for the frame " + i);
-                }
-                renderFinishedFences.add(pFence.get(0));
-                if (vkCreateFence(device, fenceInfo, null, pFence) != VK_SUCCESS) {
-                    throw new RuntimeException("Failed to create synchronization objects for the frame " + i);
-                }
-                inFlightFences.add(pFence.get(0));
-
-            }
-
-        }
+//        try (MemoryStack stack = stackPush()) {
+////
+////            VkSemaphoreCreateInfo semaphoreInfo = VkSemaphoreCreateInfo.calloc(stack);
+////            semaphoreInfo.sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO);
+//
+//            VkFenceCreateInfo fenceInfo = VkFenceCreateInfo.calloc(stack);
+//            fenceInfo.sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO);
+//            fenceInfo.flags(VK_FENCE_CREATE_SIGNALED_BIT);
+//
+//            LongBuffer pFence = stack.mallocLong(1);
+//
+//            for (int i = 0; i < parallelism; i++) {
+////                vkCreateSemaphore(device, semaphoreInfo, null, pImageAvailableSemaphore) != VK_SUCCESS
+//                if (vkCreateFence(device, fenceInfo, null, pFence) != VK_SUCCESS) {
+//                    throw new RuntimeException("Failed to create synchronization objects for the frame " + i);
+//                }
+//                renderFinishedFences.add(pFence.get(0));
+//                if (vkCreateFence(device, fenceInfo, null, pFence) != VK_SUCCESS) {
+//                    throw new RuntimeException("Failed to create synchronization objects for the frame " + i);
+//                }
+//                inFlightFences.add(pFence.get(0));
+//
+//            }
+//
+//        }
     }
 
     public void setPipeline(ComputePipeline pipeline) {
@@ -143,36 +150,40 @@ public class ComputeManager {
     }
 
 
-    public void compute(int x, int y, int z) {
-        if (recordingCmds) {
-            return;
-        }
-        recordingCmds = true;
-
-        vkWaitForFences(device, inFlightFences.get(currentFrame), true, VUtil.UINT64_MAX);
-        MemoryManager.getInstance().initFrame(currentFrame);
-        pipeline.resetDescriptorPool(currentFrame);
-        boundPipeline = 0;
-
-        currentCmdBuffer = commandBuffers.get(currentFrame);
-        vkResetCommandBuffer(currentCmdBuffer, 0);
-        VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.calloc();
-        beginInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
-
-        vkBeginCommandBuffer(currentCmdBuffer, beginInfo);
+    public long compute(int x, int y, int z) {
+        CommandPool.CommandBuffer commandBuffer = queue.beginCommands();
+        currentCmdBuffer = commandBuffer.getHandle();
+//        recordingCmds = true;
+//
+//        vkWaitForFences(device, inFlightFences.get(currentFrame), true, VUtil.UINT64_MAX);
+//        MemoryManager.getInstance().initFrame(currentFrame);
+//        pipeline.resetDescriptorPool(currentFrame);
+//        boundPipeline = 0;
+//
+//        currentCmdBuffer = commandBuffers.get(currentFrame);
+//        vkResetCommandBuffer(currentCmdBuffer, 0);
+//        VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.calloc();
+//        beginInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
+//
+//        vkBeginCommandBuffer(currentCmdBuffer, beginInfo);
 
         bindPipeline();
-        pipeline.bindDescriptorSets(currentCmdBuffer, uniformBuffer, currentFrame);
+
+//        pipeline.descriptorSets[currentFrame].bindSets
+        pipeline.bindDescriptorSets(currentCmdBuffer, currentFrame);
         vkCmdDispatch(currentCmdBuffer, x, y, z);
-
-        int result = vkEndCommandBuffer(currentCmdBuffer);
-        if(result != VK_SUCCESS) {
-            throw new RuntimeException("Failed to record command buffer:" + result);
-        }
-
+        queue.submitCommands(commandBuffer);
+//
+//        int result = vkEndCommandBuffer(currentCmdBuffer);
+//        if(result != VK_SUCCESS) {
+//            throw new RuntimeException("Failed to record command buffer:" + result);
+//        }
+//        int frameIndex = currentFrame;
         currentFrame = (currentFrame + 1) % framesNum;
-
+        return commandBuffer.getFence();
     }
 
-
+    public void waitForFrame(long fence) {
+        vkWaitForFences(device, fence, true, VUtil.UINT64_MAX);
+    }
 }

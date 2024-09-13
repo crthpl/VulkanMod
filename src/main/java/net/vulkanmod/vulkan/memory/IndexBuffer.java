@@ -19,7 +19,7 @@ public class IndexBuffer extends Buffer {
         this.createBuffer(size);
     }
 
-    public void copyBuffer(ByteBuffer buffer) {
+    public void copyToBuffer(ByteBuffer buffer) {
         int size = buffer.remaining();
 
         if(size > this.bufferSize - this.usedBytes) {
