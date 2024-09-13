@@ -47,7 +47,8 @@ public abstract class PipelineManager {
         String pathV = String.format("basic/%s/%s", baseName, vertName);
         String pathF = String.format("basic/%s/%s", baseName, fragName);
 
-        GraphicsPipeline.Builder pipelineBuilder = new GraphicsPipeline.Builder(vertexFormat, pathB);
+        GraphicsPipeline.Builder pipelineBuilder = new GraphicsPipeline.Builder(vertexFormat);
+        pipelineBuilder.setShaderPath(pathB);
         pipelineBuilder.parseBindingsJSON();
 
         SPIRVUtils.SPIRV vertShaderSPIRV = compileShaderAbsoluteFile(String.format("%s%s.vsh", shaderPath, pathV), SPIRVUtils.ShaderKind.VERTEX_SHADER);

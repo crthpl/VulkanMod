@@ -1,37 +1,24 @@
 package net.vulkanmod.vulkan.shader;
 
 import com.google.common.collect.ImmutableList;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
-import net.minecraft.util.GsonHelper;
 import net.vulkanmod.interfaces.VertexFormatMixed;
 import net.vulkanmod.vulkan.Renderer;
 import net.vulkanmod.vulkan.Vulkan;
 import net.vulkanmod.vulkan.device.DeviceManager;
 import net.vulkanmod.vulkan.framebuffer.RenderPass;
-import net.vulkanmod.vulkan.shader.descriptor.ImageDescriptor;
-import net.vulkanmod.vulkan.shader.descriptor.ManualUBO;
-import net.vulkanmod.vulkan.shader.descriptor.UBO;
-import net.vulkanmod.vulkan.shader.layout.AlignedStruct;
-import net.vulkanmod.vulkan.shader.layout.PushConstants;
-import net.vulkanmod.vulkan.texture.VTextureSelector;
 import org.apache.commons.lang3.Validate;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static net.vulkanmod.vulkan.shader.SPIRVUtils.compileShader;
 import static net.vulkanmod.vulkan.shader.SPIRVUtils.compileShaderAbsoluteFile;
@@ -49,15 +36,9 @@ public class GraphicsPipeline extends Pipeline {
     private long fragShaderModule = 0;
 
     GraphicsPipeline(Builder builder) {
-        super(builder.shaderPath);
-        this.descriptors = new ArrayList<>(builder.UBOs);
-        this.manualUBO = builder.manualUBO;
-        this.imageDescriptors = builder.imageDescriptors;
-        this.pushConstants = builder.pushConstants;
+        super(builder);
         this.vertexFormat = builder.vertexFormat;
 
-        createDescriptorSetLayout();
-        createPipelineLayout();
         createShaderModules(builder.vertShaderSPIRV, builder.fragShaderSPIRV);
 
         if (builder.renderPass != null)
@@ -71,6 +52,19 @@ public class GraphicsPipeline extends Pipeline {
 
     public long getHandle(PipelineState state) {
         return graphicsPipelines.computeIfAbsent(state, this::createGraphicsPipeline);
+    }
+
+    public int getBindPoint() {
+        return VK_PIPELINE_BIND_POINT_GRAPHICS;
+    }
+
+    protected static final List<Pipeline> PIPELINES = new LinkedList<>();
+
+    public static void recreateDescriptorSets(int frames) {
+        PIPELINES.forEach(pipeline -> {
+            pipeline.destroyDescriptorSets();
+            pipeline.createDescriptorSets(frames);
+        });
     }
 
     private long createGraphicsPipeline(PipelineState state) {
@@ -365,7 +359,8 @@ public class GraphicsPipeline extends Pipeline {
     public static class Builder extends Pipeline.Builder {
 
         public static GraphicsPipeline createGraphicsPipeline(VertexFormat format, String path) {
-            GraphicsPipeline.Builder pipelineBuilder = new GraphicsPipeline.Builder(format, path);
+            GraphicsPipeline.Builder pipelineBuilder = new GraphicsPipeline.Builder(format);
+            pipelineBuilder.setShaderPath(path);
             pipelineBuilder.parseBindingsJSON();
             pipelineBuilder.compileShaders();
             return pipelineBuilder.createGraphicsPipeline();
@@ -378,23 +373,18 @@ public class GraphicsPipeline extends Pipeline {
 
         RenderPass renderPass;
 
-        public Builder(VertexFormat vertexFormat, String path) {
-            super(path);
-            this.vertexFormat = vertexFormat;
-            this.shaderPath = path;
-        }
-
         public Builder(VertexFormat vertexFormat) {
-            this(vertexFormat, null);
+            super();
+            this.vertexFormat = vertexFormat;
         }
 
         public GraphicsPipeline createGraphicsPipeline() {
-            Validate.isTrue(this.imageDescriptors != null && this.UBOs != null
+            Validate.isTrue(this.imageDescriptors != null && this.descriptors != null
                             && this.vertShaderSPIRV != null && this.fragShaderSPIRV != null,
                     "Cannot create Pipeline: resources missing");
 
             if (this.manualUBO != null)
-                this.UBOs.add(this.manualUBO);
+                this.descriptors.add(this.manualUBO);
 
             return new GraphicsPipeline(this);
         }

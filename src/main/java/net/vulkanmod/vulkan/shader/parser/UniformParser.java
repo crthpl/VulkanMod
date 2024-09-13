@@ -2,10 +2,9 @@ package net.vulkanmod.vulkan.shader.parser;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.vulkanmod.vulkan.shader.GraphicsPipeline;
-import net.vulkanmod.vulkan.shader.Pipeline;
+import net.vulkanmod.vulkan.shader.descriptor.BufferDescriptor;
 import net.vulkanmod.vulkan.shader.descriptor.ImageDescriptor;
 import net.vulkanmod.vulkan.shader.layout.AlignedStruct;
-import net.vulkanmod.vulkan.shader.descriptor.UBO;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +19,7 @@ public class UniformParser {
     private String type;
     private String name;
 
-    private UBO ubo;
+    private BufferDescriptor ubo;
     private List<ImageDescriptor> imageDescriptors;
 
     public UniformParser(GlslConverter converterInstance) {
@@ -98,7 +97,7 @@ public class UniformParser {
         return builder.toString();
     }
 
-    private UBO createUBO() {
+    private BufferDescriptor createUBO() {
         AlignedStruct.Builder builder = new AlignedStruct.Builder();
 
         for(Uniform uniform : this.globalUniforms) {
@@ -132,7 +131,7 @@ public class UniformParser {
         return s.substring(0, last);
     }
 
-    public UBO getUbo() {
+    public BufferDescriptor getUbo() {
         return this.ubo;
     }
 

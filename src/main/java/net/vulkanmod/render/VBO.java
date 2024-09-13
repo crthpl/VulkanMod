@@ -98,7 +98,7 @@ public class VBO {
                 this.indexBuffer.freeBuffer();
 
             this.indexBuffer = new IndexBuffer(data.remaining(), MemoryTypes.GPU_MEM);
-            this.indexBuffer.copyBuffer(data);
+            this.indexBuffer.copyToBuffer(data);
         }
 
     }

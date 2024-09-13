@@ -5,5 +5,5 @@ layout (binding = 0) buffer Position {
 
 void main ()
 {
-	int xp = 42;
+	x += 5;
 }

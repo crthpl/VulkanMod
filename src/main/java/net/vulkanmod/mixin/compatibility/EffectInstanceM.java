@@ -14,9 +14,8 @@ import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceProvider;
 import net.vulkanmod.vulkan.Renderer;
 import net.vulkanmod.vulkan.shader.GraphicsPipeline;
-import net.vulkanmod.vulkan.shader.Pipeline;
+import net.vulkanmod.vulkan.shader.descriptor.BufferDescriptor;
 import net.vulkanmod.vulkan.shader.layout.Uniform;
-import net.vulkanmod.vulkan.shader.descriptor.UBO;
 import net.vulkanmod.vulkan.shader.parser.GlslConverter;
 import net.vulkanmod.vulkan.util.MappedBuffer;
 import org.apache.commons.io.IOUtils;
@@ -38,7 +37,6 @@ import java.io.Reader;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.IntSupplier;
@@ -114,11 +112,12 @@ public class EffectInstanceM {
             GlslConverter converter = new GlslConverter();
 
             converter.process(vshSrc, fshSrc);
-            UBO ubo = converter.getUBO();
+            BufferDescriptor ubo = converter.getUBO();
             this.setUniformSuppliers(ubo);
 
             GraphicsPipeline.Builder builder = new GraphicsPipeline.Builder(DefaultVertexFormat.POSITION);
-            builder.setUniforms(Collections.singletonList(ubo), converter.getSamplerList());
+            builder.addDescriptor(ubo);
+            builder.setImageDescriptors(converter.getSamplerList());
             builder.compileShaders(this.name, converter.getVshConverted(), converter.getFshConverted());
 
             this.pipeline = builder.createGraphicsPipeline();
@@ -129,7 +128,7 @@ public class EffectInstanceM {
 
     }
 
-    private void setUniformSuppliers(UBO ubo) {
+    private void setUniformSuppliers(BufferDescriptor ubo) {
 
         for(Uniform v_uniform : ubo.getUniforms()) {
             com.mojang.blaze3d.shaders.Uniform uniform = this.uniformMap.get(v_uniform.getName());
