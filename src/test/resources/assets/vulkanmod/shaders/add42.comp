@@ -3,7 +3,6 @@ layout (binding = 0) buffer Position {
     int x;
 };
 
-void main ()
-{
-	x += 5;
+void main () {
+	x += 42;
 }

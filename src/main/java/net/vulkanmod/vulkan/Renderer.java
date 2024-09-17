@@ -75,7 +75,7 @@ public class Renderer {
     }
 
     private final Set<Pipeline> usedPipelines = new ObjectOpenHashSet<>();
-    private Pipeline boundPipeline;
+    private GraphicsPipeline boundPipeline;
     private long boundPipelineHandle;
 
     private Drawer drawer;
@@ -539,7 +539,7 @@ public class Renderer {
 
     }
 
-    public Pipeline getBoundPipeline() {
+    public GraphicsPipeline getBoundPipeline() {
         return boundPipeline;
     }
 
