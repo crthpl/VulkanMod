@@ -9,7 +9,6 @@ import net.vulkanmod.vulkan.Renderer;
 import net.vulkanmod.vulkan.VRenderSystem;
 import net.vulkanmod.vulkan.shader.GraphicsPipeline;
 
-import net.vulkanmod.vulkan.shader.Pipeline;
 import net.vulkanmod.vulkan.texture.VTextureSelector;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -71,7 +70,7 @@ public class BufferUploaderM {
 
         if (parameters.vertexCount() > 0) {
             Renderer renderer = Renderer.getInstance();
-            Pipeline pipeline = renderer.getBoundPipeline();
+            GraphicsPipeline pipeline = renderer.getBoundPipeline();
             renderer.uploadAndBindUBOs(pipeline);
 
             Renderer.getDrawer().draw(meshData.vertexBuffer(), parameters.mode(), parameters.format(), parameters.vertexCount());

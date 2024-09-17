@@ -10,13 +10,22 @@ base {
 	archivesName = project.archives_base_name
 }
 
+sourceSets {
+	test {
+		java {
+			srcDirs "src/test/java"
+		}
+	}
+}
+
 loom {
 	accessWidenerPath = file("src/main/resources/vulkanmod.accesswidener")
 
 	runs {
 		test {
 			source = sourceSets.test
-//			defaultMainClass = ComputeTest
+			defaultMainClass = "net.vulkanmod.ComputeTest"
+			environment = "server"
 		}
 	}
 }
@@ -84,14 +93,10 @@ processResources {
 tasks.withType(JavaCompile).configureEach {
 	it.options.release = 21
 }
-//
-//sourceSets {
-//	test {
-//		java {
-//			include "src/test/java"
-//		}
-//	}
-//}
+
+test {
+	useJUnitPlatform()
+}
 
 tasks.named('test', Test) {
 	useJUnitPlatform()
